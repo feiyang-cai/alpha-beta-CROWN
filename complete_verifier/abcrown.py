@@ -641,6 +641,8 @@ def main():
         for k, v in verification_summary.items():
             print(f"{k} (total {len(v)}), index:", v)
 
+    return verified_status
+
 
 if __name__ == "__main__":
     arguments.Config.parse_config()

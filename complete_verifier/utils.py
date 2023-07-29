@@ -355,7 +355,7 @@ def load_model(weights_loaded=True):
             traceback.print_exc()
             exit()
         model_ori.eval()
-        print(model_ori)
+        #print(model_ori)
 
         if not weights_loaded:
             return model_ori
