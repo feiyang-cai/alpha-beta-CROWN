@@ -271,3 +271,40 @@ class SingleStep(nn.Module):
         #x[:, 0:1] = x[:, 0:1] * self.d_normalizer
         #x[:, 1:2] = x[:, 1:2] * self.v_normalizer
         return x
+
+class MultiStep(nn.Module):
+    def __init__(self, d_normalizer=60.0, v_normalizer=30.0, index=0, num_steps=1) -> None:
+        super().__init__()
+        self.gan = Gan()
+        self.ddpg = DDPG()
+        self.dynamics = Dynamics()
+        self.d_normalizer = d_normalizer
+        self.v_normalizer = v_normalizer
+        #self.denomalizer = torch.tensor([[d_normalizer, 0],
+        #                                  [0, v_normalizer]], dtype=torch.float32)
+        self.normalizer = [d_normalizer, v_normalizer]
+        self.index = index
+        self.num_steps = num_steps
+    
+    def forward(self, x):
+        d = x[:, 0:1]/self.d_normalizer
+        v = x[:, 1:2]/self.v_normalizer
+
+        for step in range(self.num_steps):
+            z = x[:, 2+step*4:6+step*4]
+            gan_input = torch.cat((d, z), dim=1)
+            d_predicted = self.gan(gan_input)
+            u = self.ddpg(d_predicted, v)
+            dynamics_output = self.dynamics(d, v, u)
+            d = dynamics_output[:,0:1]
+            v = dynamics_output[:,1:2]
+        x = dynamics_output[:,self.index:self.index+1] * self.normalizer[self.index]
+            
+        #z = x[:, 2:6]
+        #x = torch.cat((d, z), dim=1)
+        #d_predicted = self.gan(x)
+        #u = self.ddpg(d_predicted, v)
+        #x = self.dynamics(d, v, u)[:,self.index:self.index+1] * self.normalizer[self.index]
+        #x[:, 0:1] = x[:, 0:1] * self.d_normalizer
+        #x[:, 1:2] = x[:, 1:2] * self.v_normalizer
+        return x
